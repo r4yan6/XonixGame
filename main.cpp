@@ -1,10 +1,12 @@
 #include <SFML/Graphics.hpp>
 #include <cstdint>
+#include <string>
 #include <time.h>
 using namespace sf;
 
 const int M = 25;
 const int N = 40;
+const int topOffset = 50; // Reserved top bar for HUD (Score, Time, Moves, Power-ups)
 
 int grid[M][N] = {0};
 int ts = 18; // tile size
@@ -26,7 +28,7 @@ void drop(int y, int x) {
     drop(y, x + 1);
 }
 
-void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int enemyCount) {
+void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int enemyCount, int& moves_count) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
       if (i == 0 || j == 0 || i == M - 1 || j == N - 1)
@@ -43,12 +45,13 @@ void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int ene
     enemyDY[i] = 4 - rand() % 8;
     if (enemyDY[i] == 0) enemyDY[i] = 2;
   }
+  moves_count = 0;
 }
 
 int main() {
   srand(time(0));
 
-  RenderWindow window(VideoMode(N * ts, M * ts), "Xonix Game!");
+  RenderWindow window(VideoMode(N * ts, M * ts + topOffset), "Xonix Game!");
   window.setFramerateLimit(60);
 
   Texture t1, t2, t3;
@@ -57,7 +60,7 @@ int main() {
   t3.loadFromFile("images/enemy.png");
 
   Sprite sTile(t1), sGameover(t2), sEnemy(t3);
-  sGameover.setPosition(100, 100);
+  sGameover.setPosition((N * ts - 300) / 2.0f, 150.0f);
   sEnemy.setOrigin(20, 20);
 
   // bgs
@@ -72,17 +75,19 @@ int main() {
   Font font;
   font.loadFromFile("assets/font.ttf");
 
-  // Scale backgrounds to window size (720x450)
+  // Scale backgrounds to window size (720 x (450 + topOffset))
   if (bg1.getSize().x > 0)
-    menu_bg.setScale((float)(N * ts) / bg1.getSize().x, (float)(M * ts) / bg1.getSize().y);
+    menu_bg.setScale((float)(N * ts) / bg1.getSize().x, (float)(M * ts + topOffset) / bg1.getSize().y);
   if (bg2.getSize().x > 0)
-    easy_bg.setScale((float)(N * ts) / bg2.getSize().x, (float)(M * ts) / bg2.getSize().y);
+    easy_bg.setScale((float)(N * ts) / bg2.getSize().x, (float)(M * ts + topOffset) / bg2.getSize().y);
   if (bg3.getSize().x > 0)
-    medium_bg.setScale((float)(N * ts) / bg3.getSize().x, (float)(M * ts) / bg3.getSize().y);
+    medium_bg.setScale((float)(N * ts) / bg3.getSize().x, (float)(M * ts + topOffset) / bg3.getSize().y);
   if (bg4.getSize().x > 0)
-    hard_bg.setScale((float)(N * ts) / bg4.getSize().x, (float)(M * ts) / bg4.getSize().y);
+    hard_bg.setScale((float)(N * ts) / bg4.getSize().x, (float)(M * ts + topOffset) / bg4.getSize().y);
 
   int enemyCount = 4;
+  int moveCount = 0;
+  bool sameTurn = true;
 
   // Separate arrays store each enemy's data.
   int enemyX[10];
@@ -106,7 +111,7 @@ int main() {
   int selectedOption = 0;
   int selectedDifficultyOption = 0;
 
-  resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount);
+  resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
 
   bool Game = true;
   int x = 10, y = 0, dx = 0, dy = 0;
@@ -126,10 +131,12 @@ int main() {
       if (e.type == Event::KeyPressed) {
         if (currentState == STATE_MENU) {
           if (e.key.code == Keyboard::Up) {
-            selectedOption = (selectedOption + 3) % 4;
+            selectedOption--;
+            if(selectedOption < 0)  selectedOption = 3;
           }
           if (e.key.code == Keyboard::Down) {
-            selectedOption = (selectedOption + 1) % 4;
+            selectedOption++;
+            if(selectedOption > 3)  selectedOption = 0;
           }
           if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
             if (selectedOption == 0) {
@@ -139,7 +146,7 @@ int main() {
               else if (currentMode == MODE_HARD) enemyCount = 6;
               else if (currentMode == MODE_CONTINUOUS) enemyCount = 2;
 
-              resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount);
+              resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
               x = 10; y = 0; dx = 0; dy = 0;
               Game = true;
               currentState = STATE_PLAYING;
@@ -153,10 +160,12 @@ int main() {
           }
         } else if (currentState == STATE_DIFFICULTY) {
           if (e.key.code == Keyboard::Up) {
-            selectedDifficultyOption = (selectedDifficultyOption + 3) % 4;
+            selectedDifficultyOption--;
+            if(selectedDifficultyOption < 0)  selectedDifficultyOption = 3;
           }
           if (e.key.code == Keyboard::Down) {
-            selectedDifficultyOption = (selectedDifficultyOption + 1) % 4;
+            selectedDifficultyOption++;
+            if(selectedDifficultyOption > 3)  selectedDifficultyOption = 0;
           }
           if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
             if (selectedDifficultyOption == 0) {
@@ -172,7 +181,17 @@ int main() {
               currentMode = MODE_CONTINUOUS;
               enemyCount = 2;
             }
-            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount);
+            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
+            x = 10; y = 0; dx = 0; dy = 0;
+            Game = true;
+            currentState = STATE_PLAYING;
+          }
+          if (e.key.code == Keyboard::Escape) {
+            currentState = STATE_MENU;
+          }
+        } else if (currentState == STATE_GAMEOVER) {
+          if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
+            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
             x = 10; y = 0; dx = 0; dy = 0;
             Game = true;
             currentState = STATE_PLAYING;
@@ -217,8 +236,7 @@ int main() {
         Text optionText(options[i], font, 36);
         if (i == selectedOption) {
           optionText.setFillColor(Color::Cyan);
-          optionText.setStyle(Text::Bold | Text::Underlined);
-          optionText.setString("> " + std::string(options[i]) + " <");
+          optionText.setStyle(Text::Bold);
         } else {
           optionText.setFillColor(Color::White);
         }
@@ -258,8 +276,7 @@ int main() {
         Text optionText(diffOptions[i], font, 32);
         if (i == selectedDifficultyOption) {
           optionText.setFillColor(Color::Cyan);
-          optionText.setStyle(Text::Bold | Text::Underlined);
-          optionText.setString("> " + std::string(diffOptions[i]) + " <");
+          optionText.setStyle(Text::Bold);
         } else {
           optionText.setFillColor(Color::White);
         }
@@ -276,40 +293,40 @@ int main() {
       continue;
     }
 
+    if (currentState == STATE_GAMEOVER) {
+      window.clear();
+      if (currentMode == MODE_EASY) window.draw(easy_bg);
+      else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
+      else if (currentMode == MODE_HARD) window.draw(hard_bg);
+      else window.draw(easy_bg);
+
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+          if (grid[i][j] == 0) continue;
+          if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
+          if (grid[i][j] == 2) sTile.setTextureRect(IntRect(54, 0, ts, ts));
+          sTile.setPosition(j * ts, i * ts + topOffset);
+          window.draw(sTile);
+        }
+      }
+
+      sGameover.setPosition((N * ts - sGameover.getGlobalBounds().width) / 2.0f, 100.0f + topOffset);
+      window.draw(sGameover);
+
+      Text restartHint("Press ENTER to Restart, ESC for Main Menu", font, 24);
+      restartHint.setFillColor(Color::Yellow);
+      restartHint.setPosition((N * ts - restartHint.getGlobalBounds().width) / 2.0f, 250.0f + topOffset);
+      window.draw(restartHint);
+
+      window.display();
+      continue;
+    }
+
     if (currentState == STATE_PLAYING) {
       if (Keyboard::isKeyPressed(Keyboard::Left))  { dx = -1; dy = 0; }
       if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;  dy = 0; }
       if (Keyboard::isKeyPressed(Keyboard::Up))    { dx = 0;  dy = -1; }
       if (Keyboard::isKeyPressed(Keyboard::Down))  { dx = 0;  dy = 1; }
-
-      if (!Game) {
-        // Render game over state with option to return to menu
-        window.clear();
-        if (currentMode == MODE_EASY) window.draw(easy_bg);
-        else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
-        else if (currentMode == MODE_HARD) window.draw(hard_bg);
-        else window.draw(easy_bg);
-
-        for (int i = 0; i < M; i++) {
-          for (int j = 0; j < N; j++) {
-            if (grid[i][j] == 0) continue;
-            if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
-            if (grid[i][j] == 2) sTile.setTextureRect(IntRect(54, 0, ts, ts));
-            sTile.setPosition(j * ts, i * ts);
-            window.draw(sTile);
-          }
-        }
-        window.draw(sGameover);
-
-        // Restart Hint (20 -> 30)
-        Text restartHint("Press ESC for Main Menu", font, 30);
-        restartHint.setFillColor(Color::Yellow);
-        restartHint.setPosition((N * ts - restartHint.getGlobalBounds().width) / 2.0f, 300.0f);
-        window.draw(restartHint);
-
-        window.display();
-        continue;
-      }
 
       if (timer > delay) {
         x += dx;
@@ -319,12 +336,20 @@ int main() {
         if (x > N - 1) x = N - 1;
         if (y < 0) y = 0;
         if (y > M - 1) y = M - 1;
-
-        if (grid[y][x] == 2)
+        //checks if we collide with our trail
+        if (grid[y][x] == 2) {
           Game = false;
+          currentState = STATE_GAMEOVER;
+        }
+        if(grid[y][x] == 0){
+          if(sameTurn)
+            moveCount++;
+        }
 
-        if (grid[y][x] == 0)
+        if (grid[y][x] == 0){
           grid[y][x] = 2;
+          sameTurn = false;
+        }
 
         timer = 0;
       }
@@ -349,6 +374,7 @@ int main() {
       if (grid[y][x] == 1) {
         dx = 0;
         dy = 0;
+        sameTurn = true;
 
         for (int i = 0; i < enemyCount; i++)
           drop(enemyY[i] / ts, enemyX[i] / ts);
@@ -362,10 +388,12 @@ int main() {
           }
         }
       }
-
+      //checks if enemy collides with our trail
       for (int i = 0; i < enemyCount; i++) {
-        if (grid[enemyY[i] / ts][enemyX[i] / ts] == 2)
+        if (grid[enemyY[i] / ts][enemyX[i] / ts] == 2) {
           Game = false;
+          currentState = STATE_GAMEOVER;
+        }
       }
 
       // Draw the game background based on current mode
@@ -374,6 +402,11 @@ int main() {
       else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
       else if (currentMode == MODE_HARD) window.draw(hard_bg);
       else window.draw(easy_bg);
+
+      Text count("Moves Count: " + std::to_string(moveCount), font, 22);
+      count.setFillColor(Color::White);
+      count.setPosition(10,10);
+      window.draw(count);
 
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
@@ -386,19 +419,19 @@ int main() {
           if (grid[i][j] == 2)
             sTile.setTextureRect(IntRect(54, 0, ts, ts));
 
-          sTile.setPosition(j * ts, i * ts);
+          sTile.setPosition(j * ts, i * ts + topOffset);
           window.draw(sTile);
         }
       }
 
       sTile.setTextureRect(IntRect(36, 0, ts, ts));
-      sTile.setPosition(x * ts, y * ts);
+      sTile.setPosition(x * ts, y * ts + topOffset);
       window.draw(sTile);
 
       sEnemy.rotate(10);
 
       for (int i = 0; i < enemyCount; i++) {
-        sEnemy.setPosition(enemyX[i], enemyY[i]);
+        sEnemy.setPosition(enemyX[i], enemyY[i] + topOffset);
         window.draw(sEnemy);
       }
 

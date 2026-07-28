@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/xonix.dir/main.cpp.o -o xonix  -Wl,-rpath,/opt/homebrew/opt/sfml@2/lib /opt/homebrew/opt/sfml@2/lib/libsfml-graphics.2.6.2.dylib /opt/homebrew/opt/sfml@2/lib/libsfml-window.2.6.2.dylib /opt/homebrew/opt/sfml@2/lib/libsfml-system.2.6.2.dylib

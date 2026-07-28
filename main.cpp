@@ -1,0 +1,410 @@
+#include <SFML/Graphics.hpp>
+#include <cstdint>
+#include <time.h>
+using namespace sf;
+
+const int M = 25;
+const int N = 40;
+
+int grid[M][N] = {0};
+int ts = 18; // tile size
+
+void drop(int y, int x) {
+  if (grid[y][x] == 0)
+    grid[y][x] = -1;
+
+  if (grid[y - 1][x] == 0)
+    drop(y - 1, x);
+
+  if (grid[y + 1][x] == 0)
+    drop(y + 1, x);
+
+  if (grid[y][x - 1] == 0)
+    drop(y, x - 1);
+
+  if (grid[y][x + 1] == 0)
+    drop(y, x + 1);
+}
+
+void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int enemyCount) {
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      if (i == 0 || j == 0 || i == M - 1 || j == N - 1)
+        grid[i][j] = 1;
+      else
+        grid[i][j] = 0;
+    }
+  }
+  for (int i = 0; i < enemyCount; i++) {
+    enemyX[i] = 300;
+    enemyY[i] = 300;
+    enemyDX[i] = 4 - rand() % 8;
+    if (enemyDX[i] == 0) enemyDX[i] = 2;
+    enemyDY[i] = 4 - rand() % 8;
+    if (enemyDY[i] == 0) enemyDY[i] = 2;
+  }
+}
+
+int main() {
+  srand(time(0));
+
+  RenderWindow window(VideoMode(N * ts, M * ts), "Xonix Game!");
+  window.setFramerateLimit(60);
+
+  Texture t1, t2, t3;
+  t1.loadFromFile("images/tiles.png");
+  t2.loadFromFile("images/gameover.png");
+  t3.loadFromFile("images/enemy.png");
+
+  Sprite sTile(t1), sGameover(t2), sEnemy(t3);
+  sGameover.setPosition(100, 100);
+  sEnemy.setOrigin(20, 20);
+
+  // bgs
+  Texture bg1, bg2, bg3, bg4;
+  bg1.loadFromFile("assets/Bgs/main_menu.png");
+  bg2.loadFromFile("assets/Bgs/easy.png");
+  bg3.loadFromFile("assets/Bgs/medium.png");
+  bg4.loadFromFile("assets/Bgs/hard.png");
+  Sprite menu_bg(bg1), easy_bg(bg2), medium_bg(bg3), hard_bg(bg4);
+
+  // Load font for menus and text
+  Font font;
+  font.loadFromFile("assets/font.ttf");
+
+  // Scale backgrounds to window size (720x450)
+  if (bg1.getSize().x > 0)
+    menu_bg.setScale((float)(N * ts) / bg1.getSize().x, (float)(M * ts) / bg1.getSize().y);
+  if (bg2.getSize().x > 0)
+    easy_bg.setScale((float)(N * ts) / bg2.getSize().x, (float)(M * ts) / bg2.getSize().y);
+  if (bg3.getSize().x > 0)
+    medium_bg.setScale((float)(N * ts) / bg3.getSize().x, (float)(M * ts) / bg3.getSize().y);
+  if (bg4.getSize().x > 0)
+    hard_bg.setScale((float)(N * ts) / bg4.getSize().x, (float)(M * ts) / bg4.getSize().y);
+
+  int enemyCount = 4;
+
+  // Separate arrays store each enemy's data.
+  int enemyX[10];
+  int enemyY[10];
+  int enemyDX[10];
+  int enemyDY[10];
+
+  const int STATE_MENU = 0;
+  const int STATE_DIFFICULTY = 1;
+  const int STATE_PLAYING = 2;
+  const int STATE_SCOREBOARD = 3;
+  const int STATE_GAMEOVER = 4;
+
+  const int MODE_EASY = 1;
+  const int MODE_MEDIUM = 2;
+  const int MODE_HARD = 3;
+  const int MODE_CONTINUOUS = 4;
+
+  int currentState = STATE_MENU;
+  int currentMode = MODE_EASY;
+  int selectedOption = 0;
+  int selectedDifficultyOption = 0;
+
+  resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount);
+
+  bool Game = true;
+  int x = 10, y = 0, dx = 0, dy = 0;
+  float timer = 0, delay = 0.07;
+  Clock clock;
+
+  while (window.isOpen()) {
+    float time = clock.getElapsedTime().asSeconds();
+    clock.restart();
+    timer += time;
+
+    Event e;
+    while (window.pollEvent(e)) {
+      if (e.type == Event::Closed)
+        window.close();
+
+      if (e.type == Event::KeyPressed) {
+        if (currentState == STATE_MENU) {
+          if (e.key.code == Keyboard::Up) {
+            selectedOption = (selectedOption + 3) % 4;
+          }
+          if (e.key.code == Keyboard::Down) {
+            selectedOption = (selectedOption + 1) % 4;
+          }
+          if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
+            if (selectedOption == 0) {
+              // Start Game with current mode
+              if (currentMode == MODE_EASY) enemyCount = 2;
+              else if (currentMode == MODE_MEDIUM) enemyCount = 4;
+              else if (currentMode == MODE_HARD) enemyCount = 6;
+              else if (currentMode == MODE_CONTINUOUS) enemyCount = 2;
+
+              resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount);
+              x = 10; y = 0; dx = 0; dy = 0;
+              Game = true;
+              currentState = STATE_PLAYING;
+            } else if (selectedOption == 1) {
+              currentState = STATE_DIFFICULTY;
+            } else if (selectedOption == 2) {
+              currentState = STATE_SCOREBOARD;
+            } else if (selectedOption == 3) {
+              window.close();
+            }
+          }
+        } else if (currentState == STATE_DIFFICULTY) {
+          if (e.key.code == Keyboard::Up) {
+            selectedDifficultyOption = (selectedDifficultyOption + 3) % 4;
+          }
+          if (e.key.code == Keyboard::Down) {
+            selectedDifficultyOption = (selectedDifficultyOption + 1) % 4;
+          }
+          if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
+            if (selectedDifficultyOption == 0) {
+              currentMode = MODE_EASY;
+              enemyCount = 2;
+            } else if (selectedDifficultyOption == 1) {
+              currentMode = MODE_MEDIUM;
+              enemyCount = 4;
+            } else if (selectedDifficultyOption == 2) {
+              currentMode = MODE_HARD;
+              enemyCount = 6;
+            } else if (selectedDifficultyOption == 3) {
+              currentMode = MODE_CONTINUOUS;
+              enemyCount = 2;
+            }
+            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount);
+            x = 10; y = 0; dx = 0; dy = 0;
+            Game = true;
+            currentState = STATE_PLAYING;
+          }
+          if (e.key.code == Keyboard::Escape) {
+            currentState = STATE_MENU;
+          }
+        } else if (currentState == STATE_PLAYING || currentState == STATE_SCOREBOARD) {
+          if (e.key.code == Keyboard::Escape) {
+            currentState = STATE_MENU;
+          }
+        }
+      }
+    }
+
+    if (currentState == STATE_MENU) {
+      window.clear();
+      window.draw(menu_bg);
+
+      // Game Title (46 -> 69)
+      Text titleText("XONIX GAME", font, 69);
+      titleText.setFillColor(Color::Yellow);
+      titleText.setStyle(Text::Bold);
+      titleText.setPosition((N * ts - titleText.getGlobalBounds().width) / 2.0f, 25.0f);
+      window.draw(titleText);
+
+      // Subtitle (18 -> 27)
+      Text subText("Capture the Board", font, 27);
+      subText.setFillColor(Color(200, 200, 200));
+      subText.setPosition((N * ts - subText.getGlobalBounds().width) / 2.0f, 100.0f);
+      window.draw(subText);
+
+      // Menu Options (24 -> 36)
+      const char* options[4] = {
+        "Start Game",
+        "Select Level / Difficulty",
+        "Scoreboard",
+        "Exit Game"
+      };
+
+      for (int i = 0; i < 4; i++) {
+        Text optionText(options[i], font, 36);
+        if (i == selectedOption) {
+          optionText.setFillColor(Color::Cyan);
+          optionText.setStyle(Text::Bold | Text::Underlined);
+          optionText.setString("> " + std::string(options[i]) + " <");
+        } else {
+          optionText.setFillColor(Color::White);
+        }
+        optionText.setPosition((N * ts - optionText.getGlobalBounds().width) / 2.0f, 150.0f + i * 55.0f);
+        window.draw(optionText);
+      }
+
+      // Hint Text (14 -> 21)
+      Text hintText("Use UP / DOWN arrows to navigate, ENTER to select", font, 21);
+      hintText.setFillColor(Color(180, 180, 180));
+      hintText.setPosition((N * ts - hintText.getGlobalBounds().width) / 2.0f, 395.0f);
+      window.draw(hintText);
+
+      window.display();
+      continue;
+    }
+
+    if (currentState == STATE_DIFFICULTY) {
+      window.clear();
+      window.draw(menu_bg);
+
+      // Title
+      Text titleText("SELECT DIFFICULTY", font, 48);
+      titleText.setFillColor(Color::Yellow);
+      titleText.setStyle(Text::Bold);
+      titleText.setPosition((N * ts - titleText.getGlobalBounds().width) / 2.0f, 35.0f);
+      window.draw(titleText);
+
+      const char* diffOptions[4] = {
+        "Easy Mode (2 Enemies)",
+        "Medium Mode (4 Enemies)",
+        "Hard Mode (6 Enemies)",
+        "Continuous Mode (+2 Every 20s)"
+      };
+
+      for (int i = 0; i < 4; i++) {
+        Text optionText(diffOptions[i], font, 32);
+        if (i == selectedDifficultyOption) {
+          optionText.setFillColor(Color::Cyan);
+          optionText.setStyle(Text::Bold | Text::Underlined);
+          optionText.setString("> " + std::string(diffOptions[i]) + " <");
+        } else {
+          optionText.setFillColor(Color::White);
+        }
+        optionText.setPosition((N * ts - optionText.getGlobalBounds().width) / 2.0f, 130.0f + i * 55.0f);
+        window.draw(optionText);
+      }
+
+      Text hintText("Use UP / DOWN to navigate, ENTER to choose, ESC for Menu", font, 18);
+      hintText.setFillColor(Color(180, 180, 180));
+      hintText.setPosition((N * ts - hintText.getGlobalBounds().width) / 2.0f, 395.0f);
+      window.draw(hintText);
+
+      window.display();
+      continue;
+    }
+
+    if (currentState == STATE_PLAYING) {
+      if (Keyboard::isKeyPressed(Keyboard::Left))  { dx = -1; dy = 0; }
+      if (Keyboard::isKeyPressed(Keyboard::Right)) { dx = 1;  dy = 0; }
+      if (Keyboard::isKeyPressed(Keyboard::Up))    { dx = 0;  dy = -1; }
+      if (Keyboard::isKeyPressed(Keyboard::Down))  { dx = 0;  dy = 1; }
+
+      if (!Game) {
+        // Render game over state with option to return to menu
+        window.clear();
+        if (currentMode == MODE_EASY) window.draw(easy_bg);
+        else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
+        else if (currentMode == MODE_HARD) window.draw(hard_bg);
+        else window.draw(easy_bg);
+
+        for (int i = 0; i < M; i++) {
+          for (int j = 0; j < N; j++) {
+            if (grid[i][j] == 0) continue;
+            if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
+            if (grid[i][j] == 2) sTile.setTextureRect(IntRect(54, 0, ts, ts));
+            sTile.setPosition(j * ts, i * ts);
+            window.draw(sTile);
+          }
+        }
+        window.draw(sGameover);
+
+        // Restart Hint (20 -> 30)
+        Text restartHint("Press ESC for Main Menu", font, 30);
+        restartHint.setFillColor(Color::Yellow);
+        restartHint.setPosition((N * ts - restartHint.getGlobalBounds().width) / 2.0f, 300.0f);
+        window.draw(restartHint);
+
+        window.display();
+        continue;
+      }
+
+      if (timer > delay) {
+        x += dx;
+        y += dy;
+
+        if (x < 0) x = 0;
+        if (x > N - 1) x = N - 1;
+        if (y < 0) y = 0;
+        if (y > M - 1) y = M - 1;
+
+        if (grid[y][x] == 2)
+          Game = false;
+
+        if (grid[y][x] == 0)
+          grid[y][x] = 2;
+
+        timer = 0;
+      }
+
+      // Move every enemy using the four arrays.
+      for (int i = 0; i < enemyCount; i++) {
+        enemyX[i] += enemyDX[i];
+
+        if (grid[enemyY[i] / ts][enemyX[i] / ts] == 1) {
+          enemyDX[i] = -enemyDX[i];
+          enemyX[i] += enemyDX[i];
+        }
+
+        enemyY[i] += enemyDY[i];
+
+        if (grid[enemyY[i] / ts][enemyX[i] / ts] == 1) {
+          enemyDY[i] = -enemyDY[i];
+          enemyY[i] += enemyDY[i];
+        }
+      }
+
+      if (grid[y][x] == 1) {
+        dx = 0;
+        dy = 0;
+
+        for (int i = 0; i < enemyCount; i++)
+          drop(enemyY[i] / ts, enemyX[i] / ts);
+
+        for (int i = 0; i < M; i++) {
+          for (int j = 0; j < N; j++) {
+            if (grid[i][j] == -1)
+              grid[i][j] = 0;
+            else
+              grid[i][j] = 1;
+          }
+        }
+      }
+
+      for (int i = 0; i < enemyCount; i++) {
+        if (grid[enemyY[i] / ts][enemyX[i] / ts] == 2)
+          Game = false;
+      }
+
+      // Draw the game background based on current mode
+      window.clear();
+      if (currentMode == MODE_EASY) window.draw(easy_bg);
+      else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
+      else if (currentMode == MODE_HARD) window.draw(hard_bg);
+      else window.draw(easy_bg);
+
+      for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+          if (grid[i][j] == 0)
+            continue;
+
+          if (grid[i][j] == 1)
+            sTile.setTextureRect(IntRect(0, 0, ts, ts));
+
+          if (grid[i][j] == 2)
+            sTile.setTextureRect(IntRect(54, 0, ts, ts));
+
+          sTile.setPosition(j * ts, i * ts);
+          window.draw(sTile);
+        }
+      }
+
+      sTile.setTextureRect(IntRect(36, 0, ts, ts));
+      sTile.setPosition(x * ts, y * ts);
+      window.draw(sTile);
+
+      sEnemy.rotate(10);
+
+      for (int i = 0; i < enemyCount; i++) {
+        sEnemy.setPosition(enemyX[i], enemyY[i]);
+        window.draw(sEnemy);
+      }
+
+      window.display();
+    }
+  }
+
+  return 0;
+}

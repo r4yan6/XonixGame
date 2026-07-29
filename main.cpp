@@ -28,7 +28,7 @@ void drop(int y, int x) {
     drop(y, x + 1);
 }
 
-void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int enemyCount, int& moves_count) {
+void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int enemyCount, int& moves_count, bool& isBuilding) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {
       if (i == 0 || j == 0 || i == M - 1 || j == N - 1)
@@ -46,6 +46,7 @@ void resetGame(int enemyX[], int enemyY[], int enemyDX[], int enemyDY[], int ene
     if (enemyDY[i] == 0) enemyDY[i] = 2;
   }
   moves_count = 0;
+  isBuilding = true;
 }
 
 int main() {
@@ -75,6 +76,12 @@ int main() {
   Font font;
   font.loadFromFile("assets/font.ttf");
 
+  // Reusable HUD text object (optimized for performance)
+  Text moveText("", font, 22);
+  moveText.setFillColor(Color::Yellow);
+  moveText.setStyle(Text::Bold);
+  moveText.setPosition(15, 12);
+
   // Scale backgrounds to window size (720 x (450 + topOffset))
   if (bg1.getSize().x > 0)
     menu_bg.setScale((float)(N * ts) / bg1.getSize().x, (float)(M * ts + topOffset) / bg1.getSize().y);
@@ -87,7 +94,7 @@ int main() {
 
   int enemyCount = 4;
   int moveCount = 0;
-  bool sameTurn = true;
+  bool isBuilding = true;
 
   // Separate arrays store each enemy's data.
   int enemyX[10];
@@ -111,7 +118,7 @@ int main() {
   int selectedOption = 0;
   int selectedDifficultyOption = 0;
 
-  resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
+  resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount, isBuilding);
 
   bool Game = true;
   int x = 10, y = 0, dx = 0, dy = 0;
@@ -146,7 +153,7 @@ int main() {
               else if (currentMode == MODE_HARD) enemyCount = 6;
               else if (currentMode == MODE_CONTINUOUS) enemyCount = 2;
 
-              resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
+              resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount, isBuilding);
               x = 10; y = 0; dx = 0; dy = 0;
               Game = true;
               currentState = STATE_PLAYING;
@@ -181,7 +188,7 @@ int main() {
               currentMode = MODE_CONTINUOUS;
               enemyCount = 2;
             }
-            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
+            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount,isBuilding);
             x = 10; y = 0; dx = 0; dy = 0;
             Game = true;
             currentState = STATE_PLAYING;
@@ -191,7 +198,7 @@ int main() {
           }
         } else if (currentState == STATE_GAMEOVER) {
           if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
-            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount);
+            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyCount, moveCount, isBuilding);
             x = 10; y = 0; dx = 0; dy = 0;
             Game = true;
             currentState = STATE_PLAYING;
@@ -342,13 +349,13 @@ int main() {
           currentState = STATE_GAMEOVER;
         }
         if(grid[y][x] == 0){
-          if(sameTurn)
+          if(isBuilding)
             moveCount++;
         }
 
         if (grid[y][x] == 0){
           grid[y][x] = 2;
-          sameTurn = false;
+          isBuilding = false;
         }
 
         timer = 0;
@@ -374,7 +381,7 @@ int main() {
       if (grid[y][x] == 1) {
         dx = 0;
         dy = 0;
-        sameTurn = true;
+        isBuilding = true;
 
         for (int i = 0; i < enemyCount; i++)
           drop(enemyY[i] / ts, enemyX[i] / ts);

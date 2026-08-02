@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/Users/rayan/Documents/code/Starter_Code/build",
-  "command": "/usr/bin/c++  -isystem /opt/homebrew/opt/sfml@2/include -std=gnu++17 -arch arm64 -o CMakeFiles/xonix.dir/main.cpp.o -c /Users/rayan/Documents/code/Starter_Code/main.cpp",
-  "file": "/Users/rayan/Documents/code/Starter_Code/main.cpp",
-  "output": "CMakeFiles/xonix.dir/main.cpp.o"
-}
-]

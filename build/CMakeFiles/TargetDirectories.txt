@@ -1,3 +1,3 @@
-/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles/xonix.dir
-/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles/edit_cache.dir
-/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles/rebuild_cache.dir
+E:/FAST/Summer Semester/PF LAB/Project/XonixGame/build/CMakeFiles/xonix.dir
+E:/FAST/Summer Semester/PF LAB/Project/XonixGame/build/CMakeFiles/edit_cache.dir
+E:/FAST/Summer Semester/PF LAB/Project/XonixGame/build/CMakeFiles/rebuild_cache.dir

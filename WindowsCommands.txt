@@ -1,0 +1,11 @@
+# 1. Delete the broken build folder
+rm -rf build
+
+# 2. Configure the project fresh
+cmake -S . -B build -G Ninja
+
+# 3. Compile the code
+cmake --build build
+
+# 4. Run the game!
+./build/xonix.exe

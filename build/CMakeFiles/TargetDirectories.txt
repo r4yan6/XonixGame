@@ -1,3 +1,0 @@
-/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles/xonix.dir
-/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles/edit_cache.dir
-/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles/rebuild_cache.dir

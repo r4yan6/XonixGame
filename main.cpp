@@ -3,7 +3,10 @@
 #include "cmath"
 #include <string>
 #include <time.h>
+#include<iostream>
+#include<fstream>
 using namespace sf;
+using namespace std;
 
 const int M = 25;
 const int N = 40;
@@ -12,36 +15,82 @@ const int topOffset = 50; // Reserved top bar for HUD (Score, Time, Moves, Power
 int grid[M][N] = {0};
 int ts = 18; // tile size
 
-void resizeEnemyArrays(int* &enemyX, int* &enemyY, float* &enemyAngle,
-                        int* &enemyDX, int* &enemyDY,
-                        int enemyCount, int &enemyCapacity, int newCapacity) {
-    int* newX = new int[newCapacity];
-    int* newY = new int[newCapacity];
-    float* newAngle = new float[newCapacity];
-    int* newDX = new int[newCapacity];
-    int* newDY = new int[newCapacity];
+int playerscore=0;
+int powerupinventory=0;
+int powerupsawarded=0;
+int bonuscount=0;
+float freezetimer=0.0f;
+float gametime=0.0f;
 
-    for (int i = 0; i < enemyCount; i++) {
-        newX[i] = enemyX[i];
-        newY[i] = enemyY[i];
-        newAngle[i] = enemyAngle[i];
-        newDX[i] = enemyDX[i];
-        newDY[i] = enemyDY[i];
+const int maxscores =5;
+const char* scorefile ="scores.txt";
+int topscorearr[maxscores];
+float toptimearr[maxscores];
+
+int getnextpowerupthreshold(int awarded) {
+    if (awarded == 0) return 50;
+    if (awarded == 1) return 70;
+    return 70 + (awarded - 1) * 30;
+}
+
+void loadscores()
+{
+    for(int i=0;i<maxscores;i++)
+    {
+        topscorearr[i]=0;
+        toptimearr[i]=0.0f;
     }
+    ifstream infile(scorefile);
+    if(infile.is_open())
+    {
+        for(int i=0;i<maxscores;i++)
+        {
+            if(!(infile>>topscorearr[i] >> toptimearr[i]))
+                break;
+        }
+        infile.close();
+    }
+}
 
-    delete[] enemyX;
-    delete[] enemyY;
-    delete[] enemyAngle;
-    delete[] enemyDX;
-    delete[] enemyDY;
+void savescores()
+{
+    ofstream outfile(scorefile);
+    if(outfile.is_open())
+    {
+        for(int i=0;i<maxscores;i++)
+        {
+            outfile<<topscorearr[i]<<" "<<toptimearr[i];
+            cout<<endl;
+        }
+        outfile.close();
+    }
+}
 
-    enemyX = newX;
-    enemyY = newY;
-    enemyAngle = newAngle;
-    enemyDX = newDX;
-    enemyDY = newDY;
+void updatescoreboard(int currentscore, float currenttime)
+{
+  loadscores();
+  int pos=-1;
+  for(int i=0;i<maxscores;i++)
+  {
+    if(currentscore>topscorearr[i])
+    {
+      pos=i;
+      break;
+    }
+  }
+  if(pos==-1)
+  return;
+  for(int i=maxscores-1;i>pos;i--)
+  {
+    topscorearr[i]=topscorearr[i-1];
+    toptimearr[i]=toptimearr[i-1];
+  }
+  topscorearr[pos]=currentscore;
+  toptimearr[pos]=currenttime;
+  savescores();
+    
+  
 
-    enemyCapacity = newCapacity;
 }
 
 void drop(int y, int x) {
@@ -64,6 +113,38 @@ void drop(int y, int x) {
 
   if (x + 1 < N && grid[y][x + 1] == 0)
     drop(y, x + 1);
+}
+
+void resizeEnemyArrays(int* &enemyX, int* &enemyY, float* &enemyAngle, int* &enemyDX, int* &enemyDY, int count, int &capacity, int newCapacity) {
+    int* newX = new int[newCapacity];
+    int* newY = new int[newCapacity];
+    float* newAngle = new float[newCapacity];
+    int* newDX = new int[newCapacity];
+    int* newDY = new int[newCapacity];
+
+    // Copy old data
+    for (int i = 0; i < count; i++) {
+        newX[i] = enemyX[i];
+        newY[i] = enemyY[i];
+        newAngle[i] = enemyAngle[i];
+        newDX[i] = enemyDX[i];
+        newDY[i] = enemyDY[i];
+    }
+
+    // Delete old arrays
+    delete[] enemyX;
+    delete[] enemyY;
+    delete[] enemyAngle;
+    delete[] enemyDX;
+    delete[] enemyDY;
+
+    // Point to new arrays
+    enemyX = newX;
+    enemyY = newY;
+    enemyAngle = newAngle;
+    enemyDX = newDX;
+    enemyDY = newDY;
+    capacity = newCapacity;
 }
 
 void resetGame(int* &enemyX, int* &enemyY, int* &enemyDX, int* &enemyDY, float* &enemyAngle, int &enemyCount, int &enemyCapacity, int& moves_count, bool& isBuilding, float& gameTime, int& speedBoostCount, int currentMode) {
@@ -90,36 +171,13 @@ void resetGame(int* &enemyX, int* &enemyY, int* &enemyDX, int* &enemyDY, float* 
   enemyCapacity = 8;
   moves_count = 0;
   isBuilding = true;
-  gameTime = 0.0f;
-  speedBoostCount = 0;
-}
-
-void moveZigZag(int&x, int&y, int&dx, int&dy, float gameTime){
-  int amplitude = 6;
-  float freq = 12.0f;
-  x += dx;
-  y += dy + int(sin(freq*gameTime) * amplitude);
-}
-
-void moveLinear(int&x, int&y, int&dx, int&dy, float gameTime){
-  x += dx;
-  y += dy;
-}
-
-void moveCircle(int &x, int &y, float &angle){
-  int centreX = N*ts / 2;
-  int centreY = M*ts / 2;
-  float radius = 150.0f;
-  float twoPI = M_PI * 2.0f;
-  float rate = twoPI / 270.0f;
-
-  angle += rate;
-  if (angle >= twoPI){
-    angle -= twoPI;
-  }
-
-  x = centreX + int(cos(angle) * radius);
-  y = centreY + int(sin(angle) * radius);
+    
+    playerscore = 0;
+    bonuscount = 0;
+    powerupinventory = 0;
+    powerupsawarded = 0;
+    freezetimer = 0.0f;
+    gametime = 0.0f;
 }
 
 int main() {
@@ -206,6 +264,11 @@ int main() {
     float time = clock.getElapsedTime().asSeconds();
     clock.restart();
     timer += time;
+        
+    if (currentState == STATE_PLAYING) 
+        {
+        gametime += time;
+        }
 
     Event e;
     while (window.pollEvent(e)) {
@@ -274,25 +337,47 @@ int main() {
           if (e.key.code == Keyboard::Escape) {
             currentState = STATE_MENU;
           }
-        } else if (currentState == STATE_GAMEOVER) {
-          if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) {
-            resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyAngle, enemyCount, enemyCapacity, moveCount, isBuilding, gameTime, speedBoostCount, currentMode);
-            x = 10; y = 0; dx = 0; dy = 0;
-            Game = true;
-            currentState = STATE_PLAYING;
-          }
-          if (e.key.code == Keyboard::Escape) {
-            currentState = STATE_MENU;
-          }
-        } else if (currentState == STATE_PLAYING || currentState == STATE_SCOREBOARD) {
-          if (e.key.code == Keyboard::Escape) {
-            currentState = STATE_MENU;
-          }
-        }
-      }
-    }
+         }
 
-    if (currentState == STATE_MENU) {
+             else if (currentState == STATE_SCOREBOARD)
+            {
+                if (e.key.code == Keyboard::Escape) {
+                    currentState = STATE_MENU;
+                }
+            }
+            else if (currentState == STATE_GAMEOVER)
+            {
+                if (e.key.code == Keyboard::Return || e.key.code == Keyboard::Space) 
+                {
+                    resetGame(enemyX, enemyY, enemyDX, enemyDY, enemyAngle, enemyCount, enemyCapacity, moveCount, isBuilding, gameTime, speedBoostCount, currentMode);
+                    x = 10; y = 0; dx = 0; dy = 0;
+                    Game = true;
+                    currentState = STATE_PLAYING;
+                }
+                if (e.key.code == Keyboard::Escape)
+                {
+                    currentState = STATE_MENU;
+                }
+            }
+            else if (currentState == STATE_PLAYING)
+            {
+                if (e.key.code == Keyboard::F)   // powerup activation key
+                {
+                    if (powerupinventory > 0 && freezetimer <= 0.0f)
+                    {
+                        powerupinventory--;
+                        freezetimer = 3.0f;
+                    }
+                }
+                if (e.key.code == Keyboard::Escape) {
+                    currentState = STATE_MENU;
+                }
+            }
+
+          }
+    }
+    if (currentState == STATE_MENU) 
+    {
       window.clear();
       window.draw(menu_bg);
 
@@ -377,34 +462,89 @@ int main() {
       window.display();
       continue;
     }
+        if (currentState == STATE_SCOREBOARD)   // scoreboard rendering
+        {
+        window.clear();
+        window.draw(menu_bg);
 
-    if (currentState == STATE_GAMEOVER) {
-      window.clear();
-      if (currentMode == MODE_EASY) window.draw(easy_bg);
-      else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
-      else if (currentMode == MODE_HARD) window.draw(hard_bg);
-      else window.draw(easy_bg);
+        Text sbtitle("TOP 5 SCORES", font, 48);
+        sbtitle.setFillColor(Color::Yellow);
+        sbtitle.setStyle(Text::Bold);
+        sbtitle.setPosition((N * ts - sbtitle.getGlobalBounds().width) / 2.0f, 30.0f);
+        window.draw(sbtitle);
 
-      for (int i = 0; i < M; i++) {
-        for (int j = 0; j < N; j++) {
-          if (grid[i][j] == 0) continue;
-          if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
-          if (grid[i][j] == 2) sTile.setTextureRect(IntRect(54, 0, ts, ts));
-          sTile.setPosition(j * ts, i * ts + topOffset);
-          window.draw(sTile);
+        loadscores();
+
+        for (int i = 0; i < maxscores; i++) {
+            string line;
+            if (topscorearr[i] == 0) {
+                line = "--- Empty Slot ---";
+            } else {
+                line = "#" + to_string(i + 1) + "   Score: "
+                     + to_string(topscorearr[i])
+                     + "   Time: " + to_string((int)toptimearr[i]) + "s";
+            }
+            Text scoreline(line, font, 28);
+            scoreline.setFillColor((i == 0) ? Color::Yellow : Color::White);
+            scoreline.setPosition((N * ts - scoreline.getGlobalBounds().width) / 2.0f,
+                                  120.0f + i * 50.0f);
+            window.draw(scoreline);
         }
-      }
 
-      sGameover.setPosition((N * ts - sGameover.getGlobalBounds().width) / 2.0f, 100.0f + topOffset);
-      window.draw(sGameover);
+        Text sbhint("Press ESC to return to Menu", font, 20);
+        sbhint.setFillColor(Color(180, 180, 180));
+        sbhint.setPosition((N * ts - sbhint.getGlobalBounds().width) / 2.0f, 400.0f);
+        window.draw(sbhint);
 
-      Text restartHint("Press ENTER to Restart, ESC for Main Menu", font, 24);
-      restartHint.setFillColor(Color::Yellow);
-      restartHint.setPosition((N * ts - restartHint.getGlobalBounds().width) / 2.0f, 250.0f + topOffset);
-      window.draw(restartHint);
+        window.display();
+        continue;
+    }
 
-      window.display();
-      continue;
+       if (currentState == STATE_GAMEOVER)
+    {
+        window.clear();
+        if (currentMode == MODE_EASY) window.draw(easy_bg);
+        else if (currentMode == MODE_MEDIUM) window.draw(medium_bg);
+        else if (currentMode == MODE_HARD) window.draw(hard_bg);
+        else window.draw(easy_bg);
+        for (int i = 0; i < M; i++) {
+            for (int j = 0; j < N; j++) {
+                if (grid[i][j] == 0) continue;
+                if (grid[i][j] == 1) sTile.setTextureRect(IntRect(0, 0, ts, ts));
+                if (grid[i][j] == 2) sTile.setTextureRect(IntRect(54, 0, ts, ts));
+                sTile.setPosition(j * ts, i * ts + topOffset);
+                window.draw(sTile);
+            }
+        }
+        // game over image near the top so the text fits below it
+        sGameover.setPosition((N * ts - sGameover.getGlobalBounds().width) / 2.0f, 55.0f + topOffset);
+        window.draw(sGameover);
+        float gobottom = 55.0f + topOffset + sGameover.getGlobalBounds().height;
+
+        // final score + time, placed clearly below the image
+        Text finalscore("Score: " + to_string(playerscore)
+                      + "    Time: " + to_string((int)gametime) + "s", font, 28);
+        finalscore.setFillColor(Color::White);
+        finalscore.setStyle(Text::Bold);
+        finalscore.setPosition((N * ts - finalscore.getGlobalBounds().width) / 2.0f, gobottom + 15.0f);
+        window.draw(finalscore);
+
+        // prominent restart prompt
+        Text restarthint("Press ENTER to Restart", font, 32);
+        restarthint.setFillColor(Color::Cyan);
+        restarthint.setStyle(Text::Bold);
+        restarthint.setPosition((N * ts - restarthint.getGlobalBounds().width) / 2.0f, gobottom + 60.0f);
+        window.draw(restarthint);
+
+        // secondary menu prompt, smaller and dimmer
+        Text menuhint("Press ESC for Main Menu", font, 20);
+        menuhint.setFillColor(Color(180, 180, 180));
+        menuhint.setPosition((N * ts - menuhint.getGlobalBounds().width) / 2.0f, gobottom + 105.0f);
+        window.draw(menuhint);
+
+        window.display();
+        continue;
+    
     }
 
     if (currentState == STATE_PLAYING) {
@@ -453,10 +593,14 @@ int main() {
         if (y < 0) y = 0;
         if (y > M - 1) y = M - 1;
         //checks if we collide with our trail
-        if (grid[y][x] == 2) {
+                        
+         if (grid[y][x] == 2) 
+         {
           Game = false;
           currentState = STATE_GAMEOVER;
+          updatescoreboard(playerscore, gametime);
         }
+
         if(grid[y][x] == 0){
           if(isBuilding)
             moveCount++;//increment move count
@@ -474,78 +618,98 @@ int main() {
 
 
       // Move every enemy using the four arrays.
-      for (int i = 0; i < enemyCount; i++) {
-        if((int)gameTime >= 5){
-          if(i < enemyCount/2){
-            if(i % 2 == 0)
-              moveZigZag(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-            else
-              moveCircle(enemyX[i], enemyY[i], enemyAngle[i]);
-          } else {
-            moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-          }
-        } else {
-          moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
+             
+        if (freezetimer > 0.0f) {
+            freezetimer -= time;
+            if (freezetimer < 0.0f) freezetimer = 0.0f;
         }
 
-        // Safe grid indices for array access
-        int ex = enemyX[i] / ts;
-        if (ex < 0) ex = 0;
-        if (ex >= N) ex = N - 1;
-        int ey = enemyY[i] / ts;
-        if (ey < 0) ey = 0;
-        if (ey >= M) ey = M - 1;
+        // move enemies only if not frozen
+                   // move enemies only if not frozen
+            if (freezetimer <= 0.0f) {
+                for (int i = 0; i < enemyCount; i++) {
+                    enemyX[i] += enemyDX[i];
+                    if (grid[enemyY[i] / ts][enemyX[i] / ts] == 1) {
+                        enemyDX[i] = -enemyDX[i];
+                        enemyX[i] += enemyDX[i];
+                    }
+                    enemyY[i] += enemyDY[i];
+                    if (grid[enemyY[i] / ts][enemyX[i] / ts] == 1) {
+                        enemyDY[i] = -enemyDY[i];
+                        enemyY[i] += enemyDY[i];
+                    }
+                }
+            }
 
-        // Bounce horizontally if touching land or crossing border
-        if (grid[ey][ex] == 1 || enemyX[i] < ts || enemyX[i] >= (N - 1) * ts) {
-          enemyDX[i] = -enemyDX[i];
-          enemyX[i] += enemyDX[i];
+            // if an enemy steps on a tile under construction, the player dies
+            if (currentState == STATE_PLAYING) {
+                for (int i = 0; i < enemyCount; i++) {
+                    if (grid[enemyY[i] / ts][enemyX[i] / ts] == 2) {
+                        Game = false;
+                        currentState = STATE_GAMEOVER;
+                        updatescoreboard(playerscore, gametime);
+                        break;
+                    }
+                }
+            }
+
+            // only claim a region while the player is still alive this frame
+            if (currentState == STATE_PLAYING && grid[y][x] == 1) {
+
+              
+            dx = 0;
+            dy = 0;
+            isBuilding = true;
+
+            // count empty cells before flood fill
+            int emptybefore = 0;
+            for (int i = 0; i < M; i++)
+                for (int j = 0; j < N; j++)
+                    if (grid[i][j] == 0) emptybefore++;
+
+            for (int i = 0; i < enemyCount; i++)
+                drop(enemyY[i] / ts, enemyX[i] / ts);
+
+            // count cells marked -1 (enemy reachable, not captured)
+            int enemyreachable = 0;
+            for (int i = 0; i < M; i++)
+                for (int j = 0; j < N; j++)
+                    if (grid[i][j] == -1) enemyreachable++;
+
+            // calculate captured tiles and apply multiplier
+            int capturedtiles = emptybefore - enemyreachable;
+
+            if (capturedtiles > 0) {
+                int multiplier = 1;
+                int threshold = (bonuscount >= 3) ? 5 : 10;
+
+                if (capturedtiles > threshold) {
+                    if (bonuscount >= 5)
+                        multiplier = 4;
+                    else
+                        multiplier = 2;
+                    bonuscount++;
+                }
+
+                playerscore += capturedtiles * multiplier;
+
+                // check if a powerup should be awarded
+                int nextthreshold = getnextpowerupthreshold(powerupsawarded);
+                if (playerscore >= nextthreshold) {
+                    powerupinventory++;
+                    powerupsawarded++;
+                }
+            }
+
+            for (int i = 0; i < M; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (grid[i][j] == -1)
+                        grid[i][j] = 0;
+                    else
+                        grid[i][j] = 1;
+                }
+            }
         }
-
-        ex = enemyX[i] / ts; if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
-        ey = enemyY[i] / ts; if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
-
-        // Bounce vertically if touching land or crossing border
-        if (grid[ey][ex] == 1 || enemyY[i] < ts || enemyY[i] >= (M - 1) * ts) {
-          enemyDY[i] = -enemyDY[i];
-          enemyY[i] += enemyDY[i];
-        }
-      }
-
-      if (grid[y][x] == 1) {
-        dx = 0;
-        dy = 0;
-        isBuilding = true;
-
-        for (int i = 0; i < enemyCount; i++) {
-          int ey = enemyY[i] / ts;
-          int ex = enemyX[i] / ts;
-          if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
-          if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
-          drop(ey, ex);
-        }
-
-        for (int i = 0; i < M; i++) {
-          for (int j = 0; j < N; j++) {
-            if (grid[i][j] == -1)
-              grid[i][j] = 0;
-            else
-              grid[i][j] = 1;
-          }
-        }
-      }
-      //checks if enemy collides with our trail
-      for (int i = 0; i < enemyCount; i++) {
-        int ey = enemyY[i] / ts;
-        int ex = enemyX[i] / ts;
-        if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
-        if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
-
-        if (grid[ey][ex] == 2) {
-          Game = false;
-          currentState = STATE_GAMEOVER;
-        }
-      }
 
       // Draw the game background based on current mode
       window.clear();
@@ -554,31 +718,34 @@ int main() {
       else if (currentMode == MODE_HARD) window.draw(hard_bg);
       else window.draw(easy_bg);
 
-      // Draw top HUD bar background
-      RectangleShape hudBar(Vector2f(N * ts, topOffset));
-      hudBar.setFillColor(Color(12, 12, 28, 230));
-      hudBar.setOutlineThickness(1.0f);
-      hudBar.setOutlineColor(Color(60, 60, 100));
-      hudBar.setPosition(0, 0);
-      window.draw(hudBar);
 
-      // Render Move Count
-      Text count("Moves: " + std::to_string(moveCount), font, 22);
-      count.setFillColor(Color::Yellow);
-      count.setStyle(Text::Bold);
-      count.setPosition(15, 12);
-      window.draw(count);
+        // thoray text changes
+        Text scoretext("Score: " + to_string(playerscore), font, 20);
+        scoretext.setFillColor(Color::White);
+        scoretext.setPosition(10, 10);
+        window.draw(scoretext);
 
-      // Render Elapsed Game Time
-      int seconds = (int)gameTime;//int value for time
-      int mins = seconds / 60;
-      int secs = seconds % 60;
-      std::string timeStr = "Time: " + (mins < 10 ? std::string("0") : std::string("")) + std::to_string(mins) + ":" + (secs < 10 ? std::string("0") : std::string("")) + std::to_string(secs);//adds leading zero e.g if time 5 seconds then show 05
-      Text timeDisplay(timeStr, font, 22);
-      timeDisplay.setFillColor(Color::Cyan);
-      timeDisplay.setStyle(Text::Bold);
-      timeDisplay.setPosition(520, 12);
-      window.draw(timeDisplay);
+        Text movetext("Moves: " + to_string(moveCount), font, 20);
+        movetext.setFillColor(Color::Yellow);
+        movetext.setPosition(140, 10);
+        window.draw(movetext);
+
+        Text powertext("Powerups [F]: " + to_string(powerupinventory), font, 20);
+        powertext.setFillColor(Color::Green);
+        powertext.setPosition(270, 10);
+        window.draw(powertext);
+
+        if (freezetimer > 0.0f) {
+            Text freezetext("FROZEN: " + to_string((int)freezetimer + 1) + "s", font, 20);
+            freezetext.setFillColor(Color::Cyan);
+            freezetext.setPosition(460, 10);
+            window.draw(freezetext);
+        }
+
+        Text timetext("Time: " + to_string((int)gametime) + "s", font, 20);
+        timetext.setFillColor(Color(200, 200, 200));
+        timetext.setPosition(N * ts - timetext.getGlobalBounds().width - 10, 10);
+        window.draw(timetext);
 
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++) {
@@ -609,13 +776,18 @@ int main() {
 
       window.display();
     }
+   
   }
+    
+   return 0;
 
-  delete[] enemyX;
-  delete[] enemyY;
-  delete[] enemyAngle;
-  delete[] enemyDX;
-  delete[] enemyDY;
-
-  return 0;
 }
+
+
+
+
+
+
+  
+
+

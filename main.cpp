@@ -416,12 +416,12 @@ int main() {
       if (current20sInterval > speedBoostCount) {
         speedBoostCount = current20sInterval;
         if(currentMode == MODE_CONTINUOUS){
-          enemyCount++;
+          enemyCount+= 2;
           if(enemyCount > enemyCapacity){
             resizeEnemyArrays(enemyX, enemyY, enemyAngle, enemyDX, enemyDY, enemyCount, enemyCapacity, enemyCapacity*2);
           }
         // Initialize the new enemy's starting position and speed:
-          int idx = enemyCount - 1;
+        for(int idx = enemyCount - 2; idx <= enemyCount - 1; idx++){
           enemyX[idx] = 300 + (rand() % 80 - 40);
           enemyY[idx] = 220 + (rand() % 60 - 30);
           enemyAngle[idx] = 0.0f;
@@ -429,6 +429,7 @@ int main() {
           if (enemyDX[idx] == 0) enemyDX[idx] = 2;
           enemyDY[idx] = 4 - rand() % 8;
           if (enemyDY[idx] == 0) enemyDY[idx] = 2;
+        }
         }
         for (int i = 0; i < enemyCount; i++) {
           if (enemyDX[i] >= 0) enemyDX[i] += 1; // increase the speed
@@ -475,7 +476,7 @@ int main() {
 
       // Move every enemy using the four arrays.
       for (int i = 0; i < enemyCount; i++) {
-        if((int)gameTime >= 5){
+        if((int)gameTime >= 30){
           if(i < enemyCount/2){
             if(i % 2 == 0)
               moveZigZag(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);

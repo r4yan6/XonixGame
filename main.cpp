@@ -95,10 +95,15 @@ void resetGame(int* &enemyX, int* &enemyY, int* &enemyDX, int* &enemyDY, float* 
 }
 
 void moveZigZag(int&x, int&y, int&dx, int&dy, float gameTime){
-  int amplitude = 6;
-  float freq = 12.0f;
-  x += dx;
-  y += dy + int(sin(freq*gameTime) * amplitude);
+  // Guard rail: Cap speed magnitude to prevent large single-frame leaps
+  int maxSpeed = 6;
+  int currentDx = (dx > maxSpeed) ? maxSpeed : ((dx < -maxSpeed) ? -maxSpeed : dx);
+  int currentDy = (dy > maxSpeed) ? maxSpeed : ((dy < -maxSpeed) ? -maxSpeed : dy);
+
+  int amplitude = 4;
+  float freq = 8.0f;
+  x += currentDx;
+  y += currentDy + int(sin(freq * gameTime) * amplitude);
 }
 
 void moveLinear(int&x, int&y, int&dx, int&dy, float gameTime){
@@ -432,11 +437,11 @@ int main() {
         }
         }
         for (int i = 0; i < enemyCount; i++) {
-          if (enemyDX[i] >= 0) enemyDX[i] += 1; // increase the speed
-          else enemyDX[i] -= 1;
+          if (enemyDX[i] >= 0) enemyDX[i] = (enemyDX[i] < 6) ? enemyDX[i] + 1 : 6;
+          else enemyDX[i] = (enemyDX[i] > -6) ? enemyDX[i] - 1 : -6;
 
-          if (enemyDY[i] >= 0) enemyDY[i] += 1;
-          else enemyDY[i] -= 1;
+          if (enemyDY[i] >= 0) enemyDY[i] = (enemyDY[i] < 6) ? enemyDY[i] + 1 : 6;
+          else enemyDY[i] = (enemyDY[i] > -6) ? enemyDY[i] - 1 : -6;
         }
       }
 
@@ -474,42 +479,40 @@ int main() {
       //continuos mode
 
 
-      // Move every enemy using the four arrays.
+      // Move every enemy using the four arrays with guard rails against land overlap.
       for (int i = 0; i < enemyCount; i++) {
-        if((int)gameTime >= 30){
-          if(i < enemyCount/2){
-            if(i % 2 == 0)
-              moveZigZag(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-            else
-              moveCircle(enemyX[i], enemyY[i], enemyAngle[i]);
-          } else {
+        int prevX = enemyX[i];
+        int prevY = enemyY[i];
+
+        if ((int)gameTime >= 5) {
+          if (i % 3 == 0)
+            moveZigZag(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
+          else if (i % 3 == 1)
+            moveCircle(enemyX[i], enemyY[i], enemyAngle[i]);
+          else
             moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-          }
         } else {
           moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
         }
 
-        // Safe grid indices for array access
+        // Clamp screen outer boundaries
+        if (enemyX[i] < ts) { enemyX[i] = ts; enemyDX[i] = abs(enemyDX[i]); }
+        if (enemyX[i] >= (N - 1) * ts) { enemyX[i] = (N - 1) * ts - 1; enemyDX[i] = -abs(enemyDX[i]); }
+        if (enemyY[i] < ts) { enemyY[i] = ts; enemyDY[i] = abs(enemyDY[i]); }
+        if (enemyY[i] >= (M - 1) * ts) { enemyY[i] = (M - 1) * ts - 1; enemyDY[i] = -abs(enemyDY[i]); }
+
+        // Grid index safety checks
         int ex = enemyX[i] / ts;
-        if (ex < 0) ex = 0;
-        if (ex >= N) ex = N - 1;
+        if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
         int ey = enemyY[i] / ts;
-        if (ey < 0) ey = 0;
-        if (ey >= M) ey = M - 1;
+        if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
 
-        // Bounce horizontally if touching land or crossing border
-        if (grid[ey][ex] == 1 || enemyX[i] < ts || enemyX[i] >= (N - 1) * ts) {
+        // Guard Rail: If new position overlaps land tile (grid == 1), revert position & invert velocity
+        if (grid[ey][ex] == 1) {
+          enemyX[i] = prevX;
+          enemyY[i] = prevY;
           enemyDX[i] = -enemyDX[i];
-          enemyX[i] += enemyDX[i];
-        }
-
-        ex = enemyX[i] / ts; if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
-        ey = enemyY[i] / ts; if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
-
-        // Bounce vertically if touching land or crossing border
-        if (grid[ey][ex] == 1 || enemyY[i] < ts || enemyY[i] >= (M - 1) * ts) {
           enemyDY[i] = -enemyDY[i];
-          enemyY[i] += enemyDY[i];
         }
       }
 

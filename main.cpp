@@ -3,7 +3,10 @@
 #include "cmath"
 #include <string>
 #include <time.h>
+#include <iostream>
+#include <fstream>
 using namespace sf;
+using namespace std;
 
 const int M = 25;
 const int N = 40;
@@ -11,6 +14,69 @@ const int topOffset = 50; // Reserved top bar for HUD (Score, Time, Moves, Power
 
 int grid[M][N] = {0};
 int ts = 18; // tile size
+
+// Scoring & power-up globals
+int playerscore = 0;
+int powerupinventory = 0;
+int powerupsawarded = 0;
+int bonuscount = 0;
+float freezetimer = 0.0f;
+
+// Scoreboard globals
+const int maxscores = 5;
+const char* scorefile = "scores.txt";
+int topscorearr[maxscores];
+float toptimearr[maxscores];
+
+int getnextpowerupthreshold(int awarded) {
+    if (awarded == 0) return 50;
+    if (awarded == 1) return 70;
+    return 70 + (awarded - 1) * 30;
+}
+
+void loadscores() {
+    for (int i = 0; i < maxscores; i++) {
+        topscorearr[i] = 0;
+        toptimearr[i] = 0.0f;
+    }
+    ifstream infile(scorefile);
+    if (infile.is_open()) {
+        for (int i = 0; i < maxscores; i++) {
+            if (!(infile >> topscorearr[i] >> toptimearr[i]))
+                break;
+        }
+        infile.close();
+    }
+}
+
+void savescores() {
+    ofstream outfile(scorefile);
+    if (outfile.is_open()) {
+        for (int i = 0; i < maxscores; i++) {
+            outfile << topscorearr[i] << " " << toptimearr[i] << endl;
+        }
+        outfile.close();
+    }
+}
+
+void updatescoreboard(int currentscore, float currenttime) {
+    loadscores();
+    int pos = -1;
+    for (int i = 0; i < maxscores; i++) {
+        if (currentscore > topscorearr[i]) {
+            pos = i;
+            break;
+        }
+    }
+    if (pos == -1) return;
+    for (int i = maxscores - 1; i > pos; i--) {
+        topscorearr[i] = topscorearr[i - 1];
+        toptimearr[i] = toptimearr[i - 1];
+    }
+    topscorearr[pos] = currentscore;
+    toptimearr[pos] = currenttime;
+    savescores();
+}
 
 void resizeEnemyArrays(int* &enemyX, int* &enemyY, float* &enemyAngle,
                         int* &enemyDX, int* &enemyDY,
@@ -92,6 +158,13 @@ void resetGame(int* &enemyX, int* &enemyY, int* &enemyDX, int* &enemyDY, float* 
   isBuilding = true;
   gameTime = 0.0f;
   speedBoostCount = 0;
+
+  // Reset scoring & power-up state
+  playerscore = 0;
+  bonuscount = 0;
+  powerupinventory = 0;
+  powerupsawarded = 0;
+  freezetimer = 0.0f;
 }
 
 void moveZigZag(int&x, int&y, int&dx, int&dy, float gameTime){
@@ -289,9 +362,19 @@ int main() {
           if (e.key.code == Keyboard::Escape) {
             currentState = STATE_MENU;
           }
-        } else if (currentState == STATE_PLAYING || currentState == STATE_SCOREBOARD) {
+        } else if (currentState == STATE_SCOREBOARD) {
           if (e.key.code == Keyboard::Escape) {
             currentState = STATE_MENU;
+          }
+        } else if (currentState == STATE_PLAYING) {
+          if (e.key.code == Keyboard::Escape) {
+            currentState = STATE_MENU;
+          }
+          if (e.key.code == Keyboard::F) {
+            if (powerupinventory > 0 && freezetimer <= 0.0f) {
+              powerupinventory--;
+              freezetimer = 3.0f;
+            }
           }
         }
       }
@@ -383,6 +466,43 @@ int main() {
       continue;
     }
 
+    if (currentState == STATE_SCOREBOARD) {
+      window.clear();
+      window.draw(menu_bg);
+
+      Text sbtitle("TOP 5 SCORES", font, 48);
+      sbtitle.setFillColor(Color::Yellow);
+      sbtitle.setStyle(Text::Bold);
+      sbtitle.setPosition((N * ts - sbtitle.getGlobalBounds().width) / 2.0f, 30.0f);
+      window.draw(sbtitle);
+
+      loadscores();
+
+      for (int i = 0; i < maxscores; i++) {
+        string line;
+        if (topscorearr[i] == 0) {
+          line = "--- Empty Slot ---";
+        } else {
+          line = "#" + to_string(i + 1) + "   Score: "
+               + to_string(topscorearr[i])
+               + "   Time: " + to_string((int)toptimearr[i]) + "s";
+        }
+        Text scoreline(line, font, 28);
+        scoreline.setFillColor((i == 0) ? Color::Yellow : Color::White);
+        scoreline.setPosition((N * ts - scoreline.getGlobalBounds().width) / 2.0f,
+                              120.0f + i * 50.0f);
+        window.draw(scoreline);
+      }
+
+      Text sbhint("Press ESC to return to Menu", font, 20);
+      sbhint.setFillColor(Color(180, 180, 180));
+      sbhint.setPosition((N * ts - sbhint.getGlobalBounds().width) / 2.0f, 400.0f);
+      window.draw(sbhint);
+
+      window.display();
+      continue;
+    }
+
     if (currentState == STATE_GAMEOVER) {
       window.clear();
       if (currentMode == MODE_EASY) window.draw(easy_bg);
@@ -400,13 +520,27 @@ int main() {
         }
       }
 
-      sGameover.setPosition((N * ts - sGameover.getGlobalBounds().width) / 2.0f, 100.0f + topOffset);
+      sGameover.setPosition((N * ts - sGameover.getGlobalBounds().width) / 2.0f, 55.0f + topOffset);
       window.draw(sGameover);
+      float gobottom = 55.0f + topOffset + sGameover.getGlobalBounds().height;
 
-      Text restartHint("Press ENTER to Restart, ESC for Main Menu", font, 24);
-      restartHint.setFillColor(Color::Yellow);
-      restartHint.setPosition((N * ts - restartHint.getGlobalBounds().width) / 2.0f, 250.0f + topOffset);
+      Text finalscore("Score: " + to_string(playerscore)
+                    + "    Time: " + to_string((int)gameTime) + "s", font, 28);
+      finalscore.setFillColor(Color::White);
+      finalscore.setStyle(Text::Bold);
+      finalscore.setPosition((N * ts - finalscore.getGlobalBounds().width) / 2.0f, gobottom + 15.0f);
+      window.draw(finalscore);
+
+      Text restartHint("Press ENTER to Restart", font, 32);
+      restartHint.setFillColor(Color::Cyan);
+      restartHint.setStyle(Text::Bold);
+      restartHint.setPosition((N * ts - restartHint.getGlobalBounds().width) / 2.0f, gobottom + 60.0f);
       window.draw(restartHint);
+
+      Text menuhint("Press ESC for Main Menu", font, 20);
+      menuhint.setFillColor(Color(180, 180, 180));
+      menuhint.setPosition((N * ts - menuhint.getGlobalBounds().width) / 2.0f, gobottom + 105.0f);
+      window.draw(menuhint);
 
       window.display();
       continue;
@@ -462,6 +596,7 @@ int main() {
         if (grid[y][x] == 2) {
           Game = false;
           currentState = STATE_GAMEOVER;
+          updatescoreboard(playerscore, gameTime);
         }
         if(grid[y][x] == 0){
           if(isBuilding)
@@ -479,40 +614,49 @@ int main() {
       //continuos mode
 
 
+      // Decrement freeze timer
+      if (freezetimer > 0.0f) {
+        freezetimer -= time;
+        if (freezetimer < 0.0f) freezetimer = 0.0f;
+      }
+
       // Move every enemy using the four arrays with guard rails against land overlap.
-      for (int i = 0; i < enemyCount; i++) {
-        int prevX = enemyX[i];
-        int prevY = enemyY[i];
+      // Enemies only move when NOT frozen.
+      if (freezetimer <= 0.0f) {
+        for (int i = 0; i < enemyCount; i++) {
+          int prevX = enemyX[i];
+          int prevY = enemyY[i];
 
-        if ((int)gameTime >= 5) {
-          if (i % 3 == 0)
-            moveZigZag(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-          else if (i % 3 == 1)
-            moveCircle(enemyX[i], enemyY[i], enemyAngle[i]);
-          else
+          if ((int)gameTime >= 5) {
+            if (i % 3 == 0)
+              moveZigZag(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
+            else if (i % 3 == 1)
+              moveCircle(enemyX[i], enemyY[i], enemyAngle[i]);
+            else
+              moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
+          } else {
             moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-        } else {
-          moveLinear(enemyX[i], enemyY[i], enemyDX[i], enemyDY[i], gameTime);
-        }
+          }
 
-        // Clamp screen outer boundaries
-        if (enemyX[i] < ts) { enemyX[i] = ts; enemyDX[i] = abs(enemyDX[i]); }
-        if (enemyX[i] >= (N - 1) * ts) { enemyX[i] = (N - 1) * ts - 1; enemyDX[i] = -abs(enemyDX[i]); }
-        if (enemyY[i] < ts) { enemyY[i] = ts; enemyDY[i] = abs(enemyDY[i]); }
-        if (enemyY[i] >= (M - 1) * ts) { enemyY[i] = (M - 1) * ts - 1; enemyDY[i] = -abs(enemyDY[i]); }
+          // Clamp screen outer boundaries
+          if (enemyX[i] < ts) { enemyX[i] = ts; enemyDX[i] = abs(enemyDX[i]); }
+          if (enemyX[i] >= (N - 1) * ts) { enemyX[i] = (N - 1) * ts - 1; enemyDX[i] = -abs(enemyDX[i]); }
+          if (enemyY[i] < ts) { enemyY[i] = ts; enemyDY[i] = abs(enemyDY[i]); }
+          if (enemyY[i] >= (M - 1) * ts) { enemyY[i] = (M - 1) * ts - 1; enemyDY[i] = -abs(enemyDY[i]); }
 
-        // Grid index safety checks
-        int ex = enemyX[i] / ts;
-        if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
-        int ey = enemyY[i] / ts;
-        if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
+          // Grid index safety checks
+          int ex = enemyX[i] / ts;
+          if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
+          int ey = enemyY[i] / ts;
+          if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
 
-        // Guard Rail: If new position overlaps land tile (grid == 1), revert position & invert velocity
-        if (grid[ey][ex] == 1) {
-          enemyX[i] = prevX;
-          enemyY[i] = prevY;
-          enemyDX[i] = -enemyDX[i];
-          enemyDY[i] = -enemyDY[i];
+          // Guard Rail: If new position overlaps land tile (grid == 1), revert position & invert velocity
+          if (grid[ey][ex] == 1) {
+            enemyX[i] = prevX;
+            enemyY[i] = prevY;
+            enemyDX[i] = -enemyDX[i];
+            enemyDY[i] = -enemyDY[i];
+          }
         }
       }
 
@@ -521,12 +665,48 @@ int main() {
         dy = 0;
         isBuilding = true;
 
+        // Count empty cells before flood fill for scoring
+        int emptybefore = 0;
+        for (int i = 0; i < M; i++)
+          for (int j = 0; j < N; j++)
+            if (grid[i][j] == 0) emptybefore++;
+
         for (int i = 0; i < enemyCount; i++) {
           int ey = enemyY[i] / ts;
           int ex = enemyX[i] / ts;
           if (ey < 0) ey = 0; if (ey >= M) ey = M - 1;
           if (ex < 0) ex = 0; if (ex >= N) ex = N - 1;
           drop(ey, ex);
+        }
+
+        // Count enemy-reachable cells (marked -1)
+        int enemyreachable = 0;
+        for (int i = 0; i < M; i++)
+          for (int j = 0; j < N; j++)
+            if (grid[i][j] == -1) enemyreachable++;
+
+        // Calculate captured tiles and apply scoring multipliers
+        int capturedtiles = emptybefore - enemyreachable;
+        if (capturedtiles > 0) {
+          int multiplier = 1;
+          int threshold = (bonuscount >= 3) ? 5 : 10;
+
+          if (capturedtiles > threshold) {
+            if (bonuscount >= 5)
+              multiplier = 4;
+            else
+              multiplier = 2;
+            bonuscount++;
+          }
+
+          playerscore += capturedtiles * multiplier;
+
+          // Check if a power-up should be awarded
+          int nextthreshold = getnextpowerupthreshold(powerupsawarded);
+          if (playerscore >= nextthreshold) {
+            powerupinventory++;
+            powerupsawarded++;
+          }
         }
 
         for (int i = 0; i < M; i++) {
@@ -548,6 +728,7 @@ int main() {
         if (grid[ey][ex] == 2) {
           Game = false;
           currentState = STATE_GAMEOVER;
+          updatescoreboard(playerscore, gameTime);
         }
       }
 
@@ -566,22 +747,45 @@ int main() {
       hudBar.setPosition(0, 0);
       window.draw(hudBar);
 
+      // Render Score
+      Text scoretext("Score: " + to_string(playerscore), font, 20);
+      scoretext.setFillColor(Color::White);
+      scoretext.setStyle(Text::Bold);
+      scoretext.setPosition(10, 12);
+      window.draw(scoretext);
+
       // Render Move Count
-      Text count("Moves: " + std::to_string(moveCount), font, 22);
+      Text count("Moves: " + std::to_string(moveCount), font, 20);
       count.setFillColor(Color::Yellow);
       count.setStyle(Text::Bold);
-      count.setPosition(15, 12);
+      count.setPosition(140, 12);
       window.draw(count);
 
+      // Render Power-up Inventory
+      Text powertext("Powerups [F]: " + to_string(powerupinventory), font, 20);
+      powertext.setFillColor(Color::Green);
+      powertext.setStyle(Text::Bold);
+      powertext.setPosition(270, 12);
+      window.draw(powertext);
+
+      // Render Freeze Timer (only when active)
+      if (freezetimer > 0.0f) {
+        Text freezetext("FROZEN: " + to_string((int)freezetimer + 1) + "s", font, 20);
+        freezetext.setFillColor(Color::Cyan);
+        freezetext.setStyle(Text::Bold);
+        freezetext.setPosition(460, 12);
+        window.draw(freezetext);
+      }
+
       // Render Elapsed Game Time
-      int seconds = (int)gameTime;//int value for time
+      int seconds = (int)gameTime;
       int mins = seconds / 60;
       int secs = seconds % 60;
-      std::string timeStr = "Time: " + (mins < 10 ? std::string("0") : std::string("")) + std::to_string(mins) + ":" + (secs < 10 ? std::string("0") : std::string("")) + std::to_string(secs);//adds leading zero e.g if time 5 seconds then show 05
-      Text timeDisplay(timeStr, font, 22);
-      timeDisplay.setFillColor(Color::Cyan);
+      std::string timeStr = "Time: " + (mins < 10 ? std::string("0") : std::string("")) + std::to_string(mins) + ":" + (secs < 10 ? std::string("0") : std::string("")) + std::to_string(secs);
+      Text timeDisplay(timeStr, font, 20);
+      timeDisplay.setFillColor(Color(200, 200, 200));
       timeDisplay.setStyle(Text::Bold);
-      timeDisplay.setPosition(520, 12);
+      timeDisplay.setPosition(N * ts - timeDisplay.getGlobalBounds().width - 10, 12);
       window.draw(timeDisplay);
 
       for (int i = 0; i < M; i++) {

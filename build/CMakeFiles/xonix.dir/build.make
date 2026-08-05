@@ -97,6 +97,7 @@ xonix: CMakeFiles/xonix.dir/main.cpp.o
 xonix: CMakeFiles/xonix.dir/build.make
 xonix: /opt/homebrew/opt/sfml@2/lib/libsfml-graphics.2.6.2.dylib
 xonix: /opt/homebrew/opt/sfml@2/lib/libsfml-window.2.6.2.dylib
+xonix: /opt/homebrew/opt/sfml@2/lib/libsfml-audio.2.6.2.dylib
 xonix: /opt/homebrew/opt/sfml@2/lib/libsfml-system.2.6.2.dylib
 xonix: CMakeFiles/xonix.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/rayan/Documents/code/Starter_Code/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable xonix"

@@ -5,7 +5,7 @@ project(Xonix LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(SFML 2 COMPONENTS graphics window system REQUIRED)
+find_package(SFML 2 COMPONENTS graphics window system audio REQUIRED)
 
 add_executable(xonix main.cpp)
 
@@ -15,6 +15,7 @@ target_link_libraries(
     sfml-graphics
     sfml-window
     sfml-system
+    sfml-audio
 )
 
 file(

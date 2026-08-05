@@ -668,6 +668,7 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/print \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/queue \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/ratio \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/set \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/stack \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/stddef.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/stdexcept \
@@ -839,6 +840,23 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
   /Library/Developer/CommandLineTools/usr/lib/clang/21/include/stdarg.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/21/include/stddef.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/21/include/stdint.h \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/AlResource.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Export.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/InputSoundFile.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Listener.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Music.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/OutputSoundFile.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Sound.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundBuffer.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundBufferRecorder.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileFactory.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileFactory.inl \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileReader.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileWriter.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundRecorder.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundSource.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundStream.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Config.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics/BlendMode.hpp \
@@ -993,8 +1011,6 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 
 /opt/homebrew/opt/sfml@2/include/SFML/Graphics/Glsl.hpp:
 
-/opt/homebrew/opt/sfml@2/include/SFML/Graphics/ConvexShape.hpp:
-
 /opt/homebrew/opt/sfml@2/include/SFML/Graphics/Color.hpp:
 
 /opt/homebrew/opt/sfml@2/include/SFML/Graphics/CircleShape.hpp:
@@ -1004,6 +1020,32 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 /opt/homebrew/opt/sfml@2/include/SFML/Graphics.hpp:
 
 /opt/homebrew/opt/sfml@2/include/SFML/Config.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Graphics/ConvexShape.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundStream.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundSource.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundRecorder.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileWriter.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileFactory.inl:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileFactory.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundBuffer.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/Sound.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/Listener.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/InputSoundFile.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/Export.hpp:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio.hpp:
 
 /Library/Developer/CommandLineTools/usr/lib/clang/21/include/stdint.h:
 
@@ -1287,6 +1329,8 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/functional:
 
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/set:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/math.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/ostream.h:
@@ -1529,6 +1573,8 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/_types/_uintptr_t.h:
 
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/AlResource.hpp:
+
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/unary_negate.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/is_arithmetic.h:
@@ -1568,6 +1614,8 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/conditional.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/common_reference.h:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/OutputSoundFile.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/alignment_of.h:
 
@@ -1634,6 +1682,8 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/is_empty.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__system_error/error_condition.h:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundBufferRecorder.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__system_error/error_category.h:
 
@@ -2012,6 +2062,8 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/sample.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/ios.h:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileReader.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/search_n.h:
 
@@ -2658,6 +2710,8 @@ CMakeFiles/xonix.dir/main.cpp.o: /Users/rayan/Documents/code/Starter_Code/main.c
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/malloc/_malloc_type.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/filesystem:
+
+/opt/homebrew/opt/sfml@2/include/SFML/Audio/Music.hpp:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/exchange.h:
 

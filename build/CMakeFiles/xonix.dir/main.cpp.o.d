@@ -891,6 +891,24 @@ CMakeFiles/xonix.dir/main.cpp.o: \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics/Sprite.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics/Text.hpp \
   /opt/homebrew/opt/sfml@2/include/SFML/Graphics/VertexBuffer.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/InputSoundFile.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Export.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Listener.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Music.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundStream.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundSource.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/AlResource.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/OutputSoundFile.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/Sound.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundBuffer.hpp \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/set \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundBufferRecorder.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundRecorder.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileFactory.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileFactory.inl \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileReader.hpp \
+  /opt/homebrew/opt/sfml@2/include/SFML/Audio/SoundFileWriter.hpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/iostream \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/istream \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/fstream \

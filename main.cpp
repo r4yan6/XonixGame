@@ -816,7 +816,12 @@ int main() {
       }
 
       // --- P1 Territory Claiming ---
-      if (Game && grid[y][x] == 1) {
+      // Guarded by !isBuilding so this only fires on the exact frame P1 returns
+      // to land after building (not on every frame P1 happens to be idle on land).
+      // Without this guard, whichever player's claiming block runs first each frame
+      // (P1's runs before P2's) could steal credit for territory the OTHER player's
+      // trail just enclosed, simply by virtue of standing on a land tile that frame.
+      if (Game && !isBuilding && grid[y][x] == 1) {
         dx = 0;
         dy = 0;
         isBuilding = true;
@@ -879,7 +884,10 @@ int main() {
       }
 
       // --- P2 Territory Claiming ---
-      if (twoPlayerMode && Game2 && grid[y2][x2] == 1) {
+      // Same guard as P1: only fire on P2's actual return-to-land transition,
+      // so P2's captures/score/power-ups are credited to P2, not stolen by whichever
+      // player's block happens to run first while idle on land.
+      if (twoPlayerMode && Game2 && !isBuilding2 && grid[y2][x2] == 1) {
         dx2 = 0;
         dy2 = 0;
         isBuilding2 = true;
